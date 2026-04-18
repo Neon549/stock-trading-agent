@@ -1,0 +1,8 @@
+Set-Content .gitignore "venv/
+__pycache__/
+*.pyc
+.env
+memory/trading_memory.db
+rag/faiss_index/
+*.db
+"
