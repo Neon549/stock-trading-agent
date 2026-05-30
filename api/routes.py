@@ -17,9 +17,11 @@ memory = LongTermMemory()
 
 # ── 原有模型 ────────────────────────────────
 
+
 class AnalyzeRequest(BaseModel):
     stock_code: str
     force_refresh: bool = False
+
 
 class AnalyzeResponse(BaseModel):
     stock_code: str
@@ -30,6 +32,7 @@ class AnalyzeResponse(BaseModel):
     researcher_analysis: str
     status: str = "success"
 
+
 class HistoryResponse(BaseModel):
     stock_code: str
     history: str
@@ -37,12 +40,14 @@ class HistoryResponse(BaseModel):
 
 # ── 新增：回测模型 ──────────────────────────
 
+
 class BacktestRequest(BaseModel):
     stock_code: str
-    strategy: str = "kdj_macd"          # kdj_macd / rsi / boll
+    strategy: str = "kdj_macd"  # kdj_macd / rsi / boll
     start_date: str = "20220101"
     end_date: str = "20261231"
     initial_cash: float = 100000.0
+
 
 class BacktestResponse(BaseModel):
     stock_code: str
@@ -53,10 +58,15 @@ class BacktestResponse(BaseModel):
     trade_count: int
     win_rate: float
     report_text: str
+    report_path: Optional[str] = None
+    returns_data: Optional[list] = None
+    dates_data: Optional[list] = None
+    trade_records: Optional[list] = None
     status: str = "success"
 
 
 # ── 原有接口 ────────────────────────────────
+
 
 @router.get("/health")
 def health_check():
@@ -95,6 +105,7 @@ def get_history(stock_code: str):
 def get_stock_info(stock_code: str):
     try:
         from tools.akshare_tools import get_stock_price
+
         result = get_stock_price.invoke({"symbol": stock_code})
         return {"stock_code": stock_code, "info": result}
     except Exception as e:
@@ -102,6 +113,7 @@ def get_stock_info(stock_code: str):
 
 
 # ── 新增：回测接口 ──────────────────────────
+
 
 @router.post("/backtest", response_model=BacktestResponse)
 def run_backtest_api(request: BacktestRequest):
@@ -145,7 +157,10 @@ def run_backtest_api(request: BacktestRequest):
             strategy=request.strategy,
             result_summary=report_text[:500],
         )
-
+        trade_records: Optional[list] = None
+        returns = result["returns_series"]
+        returns_dates = [str(d.date()) for d in returns.index]
+        returns_values = [round(float(v), 6) for v in returns.values]
         return BacktestResponse(
             stock_code=stock_code,
             strategy=request.strategy,
@@ -155,6 +170,9 @@ def run_backtest_api(request: BacktestRequest):
             trade_count=result["trade_count"],
             win_rate=result["win_rate"],
             report_text=report_text,
+            returns_data=returns_values,
+            dates_data=returns_dates,
+            trade_records=result.get("trade_records", []),
         )
 
     except HTTPException:
@@ -167,11 +185,12 @@ def run_backtest_api(request: BacktestRequest):
 def list_strategies():
     """列出所有可用的回测策略"""
     from backtest.strategies import STRATEGY_MAP
+
     return {
         "strategies": [
             {"name": "kdj_macd", "description": "KDJ金叉 + MACD确认（双重信号过滤）"},
-            {"name": "rsi",      "description": "RSI超卖买入 / 超买卖出"},
-            {"name": "boll",     "description": "布林带下轨买入 / 上轨卖出"},
+            {"name": "rsi", "description": "RSI超卖买入 / 超买卖出"},
+            {"name": "boll", "description": "布林带下轨买入 / 上轨卖出"},
         ]
     }
 
