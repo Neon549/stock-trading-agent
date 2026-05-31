@@ -31,8 +31,9 @@ for sector, stocks in STOCK_UNIVERSE.items():
         if price <= 0 or price > 100:
             print(f"  {name}({code}) 跳过：股价{price:.1f}元")
             continue
-        if market_cap < 5_000_000_000:
-            print(f"  {name}({code}) 跳过：市值{market_cap/1e8:.0f}亿偏小")
+        # 100-300亿
+        if not (10_000_000_000 < market_cap < 30_000_000_000):
+            print(f"  {name}({code}) 跳过：市值{market_cap/1e8:.0f}亿不在100-300亿区间")
             continue
         qualified[code] = {"name": name, "sector": sector, "score": score}
 

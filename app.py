@@ -91,7 +91,12 @@ with st.sidebar:
 
     mode = st.radio(
         "功能模式",
-        ["🤖 AI智能分析", "📊 量化回测", "🔍 板块筛选"],
+        [
+            "🤖 AI智能分析",
+            "📊 量化回测",
+            "🔍 板块筛选",
+            "🎯 今日买点",  # 新增
+        ],
     )
 
     st.markdown("---")
@@ -447,3 +452,38 @@ elif mode == "🔍 板块筛选":
                 if col.button(f"{r['name']}\n{r['code']}", key=f"pick_{i}"):
                     st.session_state.selected_code = r["code"]
                     st.rerun()
+# ══════════════════════════════════════════════
+# 模式4: 今日买点
+# ══════════════════════════════════════════════
+elif mode == "🎯 今日买点":
+    st.markdown('<div class="section-title">今日买点扫描</div>', unsafe_allow_html=True)
+    st.caption("扫描股票池中满足KDJ超卖条件的股票，并用4个Agent验证")
+
+    scan_btn = st.button(
+        "🎯 开始扫描今日买点", type="primary", use_container_width=True
+    )
+
+    if scan_btn:
+        with st.spinner("正在扫描175只股票 + AI验证，约需3-5分钟..."):
+            try:
+                resp = requests.get(f"{API_BASE}/scan/today", timeout=600)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    recs = data.get("recommendations", [])
+
+                    st.success(
+                        f"✅ 扫描完成 | 候选股{data['total_candidates']}只 | 推荐{data['count']}只"
+                    )
+
+                    if recs:
+                        st.markdown("### 今日推荐买入")
+                        for r in recs:
+                            with st.expander(
+                                f"{'🟢' if r['confidence']=='高' else '🟡'} {r['name']}({r['code']}) — {r['decision']} | 置信度:{r['confidence']} | J={r['j']}"
+                            ):
+                                st.markdown(f"**当前价**: ¥{r['close']}")
+                                st.markdown(r["report"])
+                    else:
+                        st.warning("今日无满足条件的买入机会")
+            except Exception as e:
+                st.error(f"扫描失败: {e}")

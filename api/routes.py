@@ -234,3 +234,21 @@ def filter_sector_stocks(request: FilterRequest):
         return {"results": []}
     results = filter_stocks(stocks, min_score=request.min_score, top_n=request.top_n)
     return {"results": results}
+
+
+@router.get("/scan/today")
+def scan_today_signals():
+    """扫描今日买点 + 4个Agent验证"""
+    try:
+        from graph.scan_graph import run_daily_scan
+
+        result = run_daily_scan()
+        recommendations = result.get("final_recommendations", [])
+        return {
+            "date": __import__("datetime").datetime.now().strftime("%Y-%m-%d"),
+            "total_candidates": len(result.get("candidates", [])),
+            "recommendations": recommendations,
+            "count": len(recommendations),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"扫描失败: {str(e)}")

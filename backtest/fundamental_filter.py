@@ -148,6 +148,12 @@ def filter_stocks(
         data = get_fundamental_data(code)
         score = score_stock(data)
 
+        # 市值过滤：100-300亿
+        market_cap = data.get("market_cap") or 0
+        if not (10_000_000_000 < market_cap < 30_000_000_000):
+            print(f"  {name}({code}) 跳过：市值{market_cap/1e8:.0f}亿")
+            continue
+
         results.append(
             {
                 "code": code,
