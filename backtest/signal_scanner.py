@@ -77,22 +77,11 @@ def check_signal(df: pd.DataFrame) -> dict:
 
 def scan_today(
     stock_dict: dict = None,
-    start_date: str = "20240101",
+    base_start: str = None,
     top_n: int = 20,
 ) -> list[dict]:
-    """
-    扫描今日买点
-
-    参数:
-        stock_dict: {code: name} 股票池，None则用全量STOCK_UNIVERSE
-        start_date: 拉取数据的起始日期（需要足够长计算指标）
-        top_n:      返回最多N只
-
-    返回:
-        按J值从小到大排序的买点列表（J越小越超卖）
-    """
     from backtest.stock_universe import ALL_STOCKS
-    from backtest.data_loader import get_stock_data_tushare
+    from backtest.data_loader import get_stock_data_incremental  # 改这里
 
     token = os.getenv("TUSHARE_TOKEN", "")
     if not token:
@@ -101,17 +90,15 @@ def scan_today(
     if stock_dict is None:
         stock_dict = {code: info["name"] for code, info in ALL_STOCKS.items()}
 
-    from datetime import datetime
-
-    end_date = datetime.now().strftime("%Y%m%d")
-
     results = []
     total = len(stock_dict)
 
     for i, (code, name) in enumerate(stock_dict.items()):
         print(f"[Scanner] {i+1}/{total} 检测 {name}({code})...", end=" ")
         try:
-            df = get_stock_data_tushare(code, start_date, end_date, token)
+            df = get_stock_data_incremental(
+                code, base_start=base_start, token=token
+            )  # 改这里
             result = check_signal(df)
 
             if result["signal"]:
@@ -128,12 +115,10 @@ def scan_today(
                     }
                 )
             else:
-                print(f"⏳ 无信号 K={result['k']} J={result['j']}")
-
+                print(f"⏳ 无信号")
         except Exception as e:
             print(f"❌ 失败: {e}")
 
-    # 按J值从小到大排序（J越小越超卖）
     results.sort(key=lambda x: x["j"])
     return results[:top_n]
 

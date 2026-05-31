@@ -236,13 +236,17 @@ def filter_sector_stocks(request: FilterRequest):
     return {"results": results}
 
 
-@router.get("/scan/today")
-def scan_today_signals():
-    """扫描今日买点 + 4个Agent验证"""
+class ScanRequest(BaseModel):
+    base_start: str = None  # 数据起始日期，None则自动2年前
+    top_n: int = 10
+
+
+@router.post("/scan/today")
+def scan_today_signals(request: ScanRequest):
     try:
         from graph.scan_graph import run_daily_scan
 
-        result = run_daily_scan()
+        result = run_daily_scan(base_start=request.base_start)
         recommendations = result.get("final_recommendations", [])
         return {
             "date": __import__("datetime").datetime.now().strftime("%Y-%m-%d"),

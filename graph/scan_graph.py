@@ -129,3 +129,19 @@ def run_daily_scan() -> dict:
     }
     result = scan_graph.invoke(initial_state)
     return result
+
+
+def build_scan_graph(base_start: str = None):
+    # 用闭包传入base_start
+    def scan_node(state: ScanState) -> ScanState:
+        print("🔍 开始扫描今日买点...")
+        candidates = scan_today(top_n=5, base_start=base_start)
+        print(f"✅ 找到{len(candidates)}只候选股")
+        return {**state, "candidates": candidates, "current_index": 0}
+
+    # 其他node不变...
+
+
+def run_daily_scan(base_start: str = None) -> dict:
+    scan_graph = build_scan_graph(base_start=base_start)
+    # 其他不变...
