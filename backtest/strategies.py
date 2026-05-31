@@ -25,9 +25,9 @@ class KDJOversoldStrategy(bt.Strategy):
     params = dict(
         kdj_period=9,
         kdj_signal=3,
-        k_threshold=25,
+        k_threshold=20,
         d_threshold=30,
-        j_threshold=15,
+        j_threshold=10,
         stop_loss=0.08,
         printlog=True,
     )
@@ -73,11 +73,10 @@ class KDJOversoldStrategy(bt.Strategy):
             return
 
         if not self.position:
-            k_oversold = self.k_line[0] < self.p.k_threshold
-            d_oversold = self.d_line[0] < self.p.d_threshold
-            j_oversold = self.j_line[0] < self.p.j_threshold
+            k_oversold = self.k_line[0] < self.p.k_threshold  # K < 25
+            j_oversold = self.j_line[0] < self.p.j_threshold  # J < 15
 
-            if k_oversold and d_oversold and j_oversold:
+            if k_oversold and j_oversold:
                 self.log(
                     f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
