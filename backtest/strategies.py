@@ -67,6 +67,10 @@ class KDJOversoldStrategy(bt.Strategy):
             else:
                 gain = (order.executed.price - self.buy_price) / self.buy_price * 100
                 self.log(f"卖出成交 | ¥{order.executed.price:.2f} | 盈亏:{gain:+.1f}%")
+                if gain < 0:
+                    self.consecutive_losses += 1
+                else:
+                    self.consecutive_losses = 0
                 self.buy_price = None
         self.order = None
 
@@ -74,30 +78,43 @@ class KDJOversoldStrategy(bt.Strategy):
         if self.order:
             return
 
-        if not self.position:
-            k_oversold = self.k_line[0] < self.p.k_threshold  # K < 25
-            j_oversold = self.j_line[0] < self.p.j_threshold  # J < 15
+        # 冷却期倒计时
+        if self.cooldown > 0:
+            self.cooldown -= 1
+            return
 
-            if k_oversold and j_oversold:
+        if not self.position:
+            # 连续亏损2次 冷却30天
+            if self.consecutive_losses >= 2:
+                self.log(f"连续亏损{self.consecutive_losses}次，冷却30天")
+                self.cooldown = 30
+                self.consecutive_losses = 0
+                return
+
+            k_oversold = self.k_line[0] < self.p.k_threshold
+            j_oversold = self.j_line[0] < self.p.j_threshold
+            above_ma20 = self.data.close[0] > self.ma20[0]
+            ma20_rising = self.ma20[0] > self.ma20[-5]
+
+            if k_oversold and j_oversold and above_ma20 and ma20_rising:
                 self.log(
-                    f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
+                    f"买入信号 | K={self.k_line[0]:.1f} "
+                    f"D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
                 self.order = self.buy()
         else:
             current_price = self.data.close[0]
 
-            # 死叉卖出
-            death_cross = self.kdj_cross[0] < 0
+            j_overbought = self.j_line[0] > 70
 
-            # 止损
             stop_loss = (
                 self.buy_price is not None
                 and (current_price - self.buy_price) / self.buy_price
                 <= -self.p.stop_loss
             )
 
-            if death_cross:
-                self.log(f"死叉卖出 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f}")
+            if j_overbought:
+                self.log(f"J线卖出 | J={self.j_line[0]:.1f}")
                 self.order = self.sell()
             elif stop_loss:
                 loss = (current_price - self.buy_price) / self.buy_price * 100
