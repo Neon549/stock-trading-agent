@@ -195,6 +195,19 @@ def list_strategies():
     }
 
 
+@router.get("/backtest/sectors")
+def get_sectors():
+    """获取所有板块列表"""
+    from backtest.stock_universe import STOCK_UNIVERSE
+
+    sectors = {}
+    for sector, stocks in STOCK_UNIVERSE.items():
+        sectors[sector] = [
+            {"code": code, "name": name} for code, name in stocks.items()
+        ]
+    return {"sectors": sectors}
+
+
 @router.get("/backtest/history/{stock_code}")
 def get_backtest_history(stock_code: str):
     """获取某只股票的历史回测记录"""
