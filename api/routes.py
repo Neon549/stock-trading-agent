@@ -127,6 +127,9 @@ def run_backtest_api(request: BacktestRequest):
         from backtest.engine import run_backtest, format_result
 
         stock_code = request.stock_code.strip()
+        print(
+            f"[Backtest] 请求: {stock_code} {request.start_date}-{request.end_date} 策略:{request.strategy}"
+        )
         if not stock_code:
             raise HTTPException(status_code=400, detail="股票代码不能为空")
 
@@ -213,3 +216,21 @@ def get_backtest_history(stock_code: str):
     """获取某只股票的历史回测记录"""
     history = memory.get_backtest_history(stock_code)
     return {"stock_code": stock_code, "history": history}
+
+
+class FilterRequest(BaseModel):
+    sector: str
+    min_score: float = 65.0
+    top_n: int = 5
+
+
+@router.post("/backtest/filter")
+def filter_sector_stocks(request: FilterRequest):
+    from backtest.stock_universe import STOCK_UNIVERSE
+    from backtest.fundamental_filter import filter_stocks
+
+    stocks = STOCK_UNIVERSE.get(request.sector, {})
+    if not stocks:
+        return {"results": []}
+    results = filter_stocks(stocks, min_score=request.min_score, top_n=request.top_n)
+    return {"results": results}
