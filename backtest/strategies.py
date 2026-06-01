@@ -100,8 +100,18 @@ class KDJOversoldStrategy(bt.Strategy):
                 self.data.close[0] - self.data.close[-20]
             ) / self.data.close[-20]
             not_in_crash = recent_return > -0.15  # 近20天跌幅不超过15%
+            # 成交量放大确认
+            avg_vol = sum([self.data.volume[-i] for i in range(1, 6)]) / 5
+            vol_confirm = self.data.volume[0] > avg_vol * 1.2
 
-            if k_oversold and j_oversold and k_rising and j_rising and not_in_crash:
+            if (
+                k_oversold
+                and j_oversold
+                and k_rising
+                and j_rising
+                and not_in_crash
+                and vol_confirm
+            ):
                 self.log(
                     f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
