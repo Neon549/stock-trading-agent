@@ -34,43 +34,43 @@ def calc_kdj(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def check_signal(df: pd.DataFrame) -> dict:
-    """
-    检测今日是否为买点
-    条件：K<25 且 J<15 且 价格>MA20 且 MA20近5天向上
-    """
     if len(df) < 30:
         return {"signal": False, "reason": "数据不足"}
 
     df = calc_kdj(df)
     latest = df.iloc[-1]
-    prev_ma = df.iloc[-6]["MA20"]
+    prev = df.iloc[-2]
 
     k = round(float(latest["K"]), 1)
     j = round(float(latest["J"]), 1)
+    k_prev = round(float(prev["K"]), 1)
+    j_prev = round(float(prev["J"]), 1)
     close = round(float(latest["close"]), 2)
-    ma20 = round(float(latest["MA20"]), 2)
-    ma20_rising = float(latest["MA20"]) > float(prev_ma)
+
+    # 近20天涨跌幅
+    recent_return = (latest["close"] - df.iloc[-20]["close"]) / df.iloc[-20]["close"]
 
     k_ok = k < 25
     j_ok = j < 15
-    ma_ok = close > ma20
-    rise_ok = ma20_rising
+    k_rising = k > k_prev
+    j_rising = j > j_prev
+    not_crash = recent_return > -0.15
 
-    signal = k_ok and j_ok and ma_ok and rise_ok
+    signal = k_ok and j_ok and k_rising and j_rising and not_crash
 
-    conditions = []
-    conditions.append(f"K={k} {'✅' if k_ok else '❌'}")
-    conditions.append(f"J={j} {'✅' if j_ok else '❌'}")
-    conditions.append(f"价格{close}>MA20({ma20}) {'✅' if ma_ok else '❌'}")
-    conditions.append(f"MA20向上 {'✅' if rise_ok else '❌'}")
+    conditions = [
+        f"K={k} {'✅' if k_ok else '❌'}(需<25)",
+        f"J={j} {'✅' if j_ok else '❌'}(需<15)",
+        f"K回升 {k_prev}→{k} {'✅' if k_rising else '❌'}",
+        f"J回升 {j_prev}→{j} {'✅' if j_rising else '❌'}",
+        f"近20天涨跌{recent_return*100:.1f}% {'✅' if not_crash else '❌'}(需>-15%)",
+    ]
 
     return {
         "signal": signal,
         "k": k,
         "j": j,
         "close": close,
-        "ma20": ma20,
-        "ma20_rising": ma20_rising,
         "conditions": conditions,
     }
 
