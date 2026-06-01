@@ -90,10 +90,12 @@ class KDJOversoldStrategy(bt.Strategy):
                 self.consecutive_losses = 0
                 return
 
-            k_oversold = self.k_line[0] < self.p.k_threshold
-            j_oversold = self.j_line[0] < self.p.j_threshold
+            k_oversold = self.k_line[0] < self.p.k_threshold  # K < 25
+            j_oversold = self.j_line[0] < self.p.j_threshold  # J < 15
+            k_rising = self.k_line[0] > self.k_line[-1]  # K开始上升
+            j_rising = self.j_line[0] > self.j_line[-1]  # J开始上升
 
-            if k_oversold and j_oversold:
+            if k_oversold and j_oversold and k_rising and j_rising:
                 self.log(
                     f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
