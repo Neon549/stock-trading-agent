@@ -115,7 +115,7 @@ def scan_today(
                     }
                 )
             else:
-                print(f"⏳ 无信号")
+                print(f"⏳ 未达到买入条件 K={result['k']} J={result['j']}")
         except Exception as e:
             if "频率超限" in str(e):
                 print(f"⚠️ 频率超限，等待60秒...")
