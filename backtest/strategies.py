@@ -25,10 +25,12 @@ class KDJOversoldStrategy(bt.Strategy):
     params = dict(
         kdj_period=9,
         kdj_signal=3,
-        k_threshold=25,  # 保持不变
-        d_threshold=15,  # 从30改为15
-        j_threshold=15,  # 保持不变
+        k_threshold=25,
+        d_threshold=15,
+        j_threshold=15,
         stop_loss=0.08,
+        take_profit=0.08,  # 新增
+        crash_filter=0.15,  # 新增
         printlog=True,
     )
 
@@ -109,10 +111,18 @@ class KDJOversoldStrategy(bt.Strategy):
 
             j_overbought = self.j_line[0] > 70
 
+            # 止盈
             take_profit = (
                 self.buy_price is not None
-                and (current_price - self.buy_price) / self.buy_price >= 0.08
+                and (current_price - self.buy_price) / self.buy_price
+                >= self.p.take_profit
             )
+
+            # 近20天跌幅过滤
+            recent_return = (
+                self.data.close[0] - self.data.close[-20]
+            ) / self.data.close[-20]
+            not_in_crash = recent_return > -self.p.crash_filter
 
             stop_loss = (
                 self.buy_price is not None

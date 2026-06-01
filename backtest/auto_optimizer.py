@@ -237,3 +237,9 @@ if __name__ == "__main__":
         max_rounds=rounds,
         target_sharpe=0.8,
     )
+if best_result:
+    print(
+        f"最优结果: 夏普={best_result.get('sharpe'):.3f} 收益={best_result.get('total_return'):+.1f}% 交易={best_result.get('trade_count')}次"
+    )
+else:
+    print("所有轮次回测均失败")
