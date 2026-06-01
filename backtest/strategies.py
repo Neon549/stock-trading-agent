@@ -94,8 +94,12 @@ class KDJOversoldStrategy(bt.Strategy):
             j_oversold = self.j_line[0] < self.p.j_threshold  # J < 15
             k_rising = self.k_line[0] > self.k_line[-1]  # K开始上升
             j_rising = self.j_line[0] > self.j_line[-1]  # J开始上升
+            recent_return = (
+                self.data.close[0] - self.data.close[-20]
+            ) / self.data.close[-20]
+            not_in_crash = recent_return > -0.15  # 近20天跌幅不超过15%
 
-            if k_oversold and j_oversold and k_rising and j_rising:
+            if k_oversold and j_oversold and k_rising and j_rising and not_in_crash:
                 self.log(
                     f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
