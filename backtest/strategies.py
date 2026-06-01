@@ -105,6 +105,11 @@ class KDJOversoldStrategy(bt.Strategy):
 
             j_overbought = self.j_line[0] > 70
 
+            take_profit = (
+                self.buy_price is not None
+                and (current_price - self.buy_price) / self.buy_price >= 0.08
+            )
+
             stop_loss = (
                 self.buy_price is not None
                 and (current_price - self.buy_price) / self.buy_price
@@ -113,6 +118,10 @@ class KDJOversoldStrategy(bt.Strategy):
 
             if j_overbought:
                 self.log(f"J线卖出 | J={self.j_line[0]:.1f}")
+                self.order = self.sell()
+            elif take_profit:
+                gain = (current_price - self.buy_price) / self.buy_price * 100
+                self.log(f"止盈卖出 | 涨幅={gain:.1f}%")
                 self.order = self.sell()
             elif stop_loss:
                 loss = (current_price - self.buy_price) / self.buy_price * 100
