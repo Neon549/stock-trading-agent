@@ -24,6 +24,7 @@ def run_backtest(
     initial_cash: float = 100_000.0,
     commission: float = 0.001,
     printlog: bool = False,
+    strategy_params: dict = None,  # 新增
 ) -> dict:
     strategy_cls = STRATEGY_MAP.get(strategy_name)
     if strategy_cls is None:
@@ -47,7 +48,9 @@ def run_backtest(
     )
     cerebro.adddata(data_feed)
     cerebro.addsizer(bt.sizers.PercentSizer, percents=95)
-    cerebro.addstrategy(strategy_cls, printlog=printlog)
+    strategy_params = strategy_params or {}
+    strategy_params["printlog"] = printlog
+    cerebro.addstrategy(strategy_cls, **strategy_params)
 
     cerebro.addanalyzer(
         bt.analyzers.SharpeRatio, _name="sharpe", riskfreerate=0.03, annualize=True
