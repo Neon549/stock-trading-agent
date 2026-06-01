@@ -84,7 +84,6 @@ class KDJOversoldStrategy(bt.Strategy):
             return
 
         if not self.position:
-            # 连续亏损2次 冷却30天
             if self.consecutive_losses >= 2:
                 self.log(f"连续亏损{self.consecutive_losses}次，冷却30天")
                 self.cooldown = 30
@@ -93,12 +92,10 @@ class KDJOversoldStrategy(bt.Strategy):
 
             k_oversold = self.k_line[0] < self.p.k_threshold
             j_oversold = self.j_line[0] < self.p.j_threshold
-            above_ma20 = self.data.close[0] > self.ma20[0]
 
-            if k_oversold and j_oversold and above_ma20:
+            if k_oversold and j_oversold:
                 self.log(
-                    f"买入信号 | K={self.k_line[0]:.1f} "
-                    f"D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
+                    f"买入信号 | K={self.k_line[0]:.1f} D={self.d_line[0]:.1f} J={self.j_line[0]:.1f}"
                 )
                 self.order = self.buy()
         else:
