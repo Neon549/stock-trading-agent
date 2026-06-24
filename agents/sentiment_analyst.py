@@ -6,7 +6,6 @@ from config.llm_config import quick_llm
 from tools.akshare_tools import get_stock_price
 from rag.retriever import retrieve_stock_news
 
-
 SYSTEM_PROMPT = """你是一位专业的A股市场情绪分析师，专注于通过新闻资讯和市场数据判断市场情绪。
 
 你必须严格遵守以下规则：
@@ -85,15 +84,25 @@ def run_sentiment_analysis(stock_code: str) -> str:
     # 1) 程序化调用工具
     news_perf = retrieve_stock_news.invoke({"stock_code": stock_code, "query": "业绩"})
     news_order = retrieve_stock_news.invoke({"stock_code": stock_code, "query": "订单"})
-    news_policy = retrieve_stock_news.invoke({"stock_code": stock_code, "query": "政策"})
+    news_policy = retrieve_stock_news.invoke(
+        {"stock_code": stock_code, "query": "政策"}
+    )
 
     price_result = get_stock_price.invoke({"symbol": stock_code})
     if "[TOOL_ERROR]" in price_result:
         price_result = get_stock_price.invoke({"symbol": stock_code})
 
-    # 2) 只有行情失败才中止；新闻“暂无”不算失败
+    # 2) 只有行情失败才中止；新闻全部失败时用占位文本继续
     if "[TOOL_ERROR]" in price_result:
         return _abort("行情核验工具返回错误，无法完成市场热度分析。")
+
+    # 新闻工具失败时不中止，用占位文本替换
+    if "[TOOL_ERROR]" in news_perf:
+        news_perf = "暂无业绩相关新闻。"
+    if "[TOOL_ERROR]" in news_order:
+        news_order = "暂无订单相关新闻。"
+    if "[TOOL_ERROR]" in news_policy:
+        news_policy = "暂无政策相关新闻。"
 
     # 3) 工具成功后，让 LLM 只总结
     prompt = f"""{SYSTEM_PROMPT}

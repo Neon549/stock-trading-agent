@@ -83,7 +83,9 @@ def run_fundamental_analysis(stock_code: str) -> str:
 
     # 2. 工具失败则直接中止
     if "[TOOL_ERROR]" in financial_result:
-        return _abort("财务指标工具返回错误或关键财务数据不足。")
+        financial_result = (
+            "财务指标数据暂时无法获取，请基于技术面和情绪面数据综合判断。"
+        )
 
     if "[TOOL_ERROR]" in price_result:
         return _abort("行情核验工具返回错误，无法完成股票信息交叉核验。")
