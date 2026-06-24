@@ -106,9 +106,6 @@ def analysts_node(state: TradingState) -> dict:
 
 
 def validation_node(state: TradingState) -> dict:
-    """
-    校验三个分析结果是否可继续进入研究员 / 交易员环节
-    """
     print("\n🛡️ [校验节点] 检查分析结果可靠性...")
 
     fundamental_report = state.get("fundamental_report", "")
@@ -116,7 +113,6 @@ def validation_node(state: TradingState) -> dict:
     sentiment_report = state.get("sentiment_report", "")
 
     errors = []
-
     if _contains_error(fundamental_report):
         errors.append("基本面分析存在工具错误或数据不足")
     if _contains_error(technical_report):
@@ -124,29 +120,20 @@ def validation_node(state: TradingState) -> dict:
     if _contains_error(sentiment_report):
         errors.append("情绪分析存在工具错误或数据不足")
 
-        # 只有三个都失败才中止，允许部分失败继续分析
+    # 改为：三个都失败才中止
     if len(errors) >= 3:
         print("❌ 校验失败，三个分析师全部异常，系统将中止后续决策")
-
-    # company_names = _extract_company_names(
-    #     fundamental_report,
-    #     technical_report,
-    #     sentiment_report,
-    # )
-    # if len(company_names) > 1:
-    #     errors.append(f"检测到公司名称不一致：{', '.join(sorted(company_names))}")
-
-    if errors:
-        print("❌ 校验失败，系统将中止后续决策")
         return {
             "risk_assessment": "\n".join(errors),
             "final_decision": (
                 "### 交易决策\n"
                 "决策：数据不足，停止分析\n"
-                "原因：检测到工具错误、关键数据缺失或公司名称不一致。\n"
-                "要求：禁止基于当前结果生成买入价、目标价、止损价和仓位建议。"
+                "原因：三个分析师全部返回错误。\n"
             ),
         }
+
+    if errors:
+        print(f"⚠️ 部分校验警告（{len(errors)}个），但继续分析")
 
     print("✅ 校验通过，进入研究员节点")
     return {"risk_assessment": "校验通过"}
